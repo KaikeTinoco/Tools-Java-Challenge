@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.validator.constraints.LuhnCheck;
 
 @Getter
 @Setter
@@ -21,9 +22,10 @@ public class Transacao {
     @NotNull(message = "id não deve ser negativo!")
     private Long id;
 
+    @LuhnCheck
     @NotNull(message = "cartão não deve ser nulo!")
-    @Size(min = 13, max = 16, message = "cartão deve ter entre 13 e 16 dígitos!")
-    private Long cartao;
+    @NotBlank(message = "cartão não deve estar em branco!")
+    private String cartao;
 
     @NotNull(message = "descricao não deve ser nulo!")
     @NotBlank(message = "descricao não deve estar em branco!")
