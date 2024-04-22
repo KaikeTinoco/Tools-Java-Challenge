@@ -15,7 +15,7 @@ public class DescricaoResponseDTO {
     private BigDecimal valor;
     private LocalDateTime dataHora;
     private String estabelecimento;
-    private String nsu;
-    private String codigoAtuorizacao;
+    private Integer[] nsu;
+    private Integer[] codigoAtuorizacao;
     private Status status;
 }
