@@ -9,7 +9,12 @@ import br.com.desafiotools.repositories.DescricaoRepository;
 import br.com.desafiotools.repositories.FormaPagamentoRepository;
 import br.com.desafiotools.repositories.TransacaoRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import kong.unirest.JsonNode;
+import kong.unirest.JsonResponse;
+import kong.unirest.Unirest;
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -30,15 +35,14 @@ public class TransacaoService {
 
 
 
-    public ResponseEntity<?> criarTransacao(String cartao,
-                                            DescricaoCreateDTO descricaoCreateDTO,
-                                            FormaPagamentoCreateDTO formaPagamentoCreateDTO) {
-        if(transacaoRepository.findByCartao(cartao).isEmpty()){
-            Descricao descricao = descricaoMapper.toDescricao(descricaoCreateDTO);
+    @SneakyThrows
+    public ResponseEntity<?> criarTransacao(String json) {
+        TransacaoCreateDTO dto = objectMapper.readValue(json, TransacaoCreateDTO.class);
+        if(transacaoRepository.findByCartao(dto.getCartao()).isEmpty()){
+            Descricao descricao = descricaoMapper.toDescricao(dto.getDescricaoCreateDTO());
             descricaoRepository.save(descricao);
-            FormaPagamento formaPagamento = formaPagamentoMapper.toFormaPagamento(formaPagamentoCreateDTO);
+            FormaPagamento formaPagamento = formaPagamentoMapper.toFormaPagamento(dto.getFormaPagamentoCreateDTO());
             formaPagamentoRepository.save(formaPagamento);
-            TransacaoCreateDTO dto = new TransacaoCreateDTO(cartao, descricaoCreateDTO, formaPagamentoCreateDTO);
             Transacao novaTransacao = mapper.toTransacao(dto);
             gerarNsuECodigoAutorizacao(novaTransacao);
             Descricao descricao1 = novaTransacao.getDescricao();

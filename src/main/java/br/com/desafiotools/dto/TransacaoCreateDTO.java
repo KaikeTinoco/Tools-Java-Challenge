@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 public class TransacaoCreateDTO {
-    private String cartao;
     private DescricaoCreateDTO descricaoCreateDTO;
     private FormaPagamentoCreateDTO formaPagamentoCreateDTO;
+    private String cartao;
 }

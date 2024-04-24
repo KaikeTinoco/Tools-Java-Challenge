@@ -2,6 +2,7 @@ package br.com.desafiotools.resource;
 
 import br.com.desafiotools.dto.DescricaoCreateDTO;
 import br.com.desafiotools.dto.FormaPagamentoCreateDTO;
+import br.com.desafiotools.dto.TransacaoCreateDTO;
 import br.com.desafiotools.service.TransacaoService;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import lombok.AllArgsConstructor;
@@ -18,10 +19,8 @@ public class TransacaoController {
 
 
     @PostMapping(path = "/criar")
-    public ResponseEntity<?> criarTransacao( @JsonDeserialize @RequestBody DescricaoCreateDTO descricaoCreateDTO,
-                                            FormaPagamentoCreateDTO formaPagamentoCreateDTO,
-                                            String cartao){
-        return transacaoService.criarTransacao(cartao, descricaoCreateDTO, formaPagamentoCreateDTO);
+    public ResponseEntity<?> criarTransacao(@RequestBody String transacao){
+        return transacaoService.criarTransacao(transacao);
     }
 
     @GetMapping(path = "/busca")
