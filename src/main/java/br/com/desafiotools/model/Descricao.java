@@ -9,7 +9,6 @@ import jakarta.persistence.Id;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,7 +16,6 @@ import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.time.LocalDateTime;
 
 @Getter
@@ -44,10 +42,10 @@ public class Descricao {
     private String estabelecimento;
 
     @NotNull(message = "nsu não deve ser nulo!")
-    private Integer[] nsu;
+    private String nsu;
 
     @NotNull(message = "nsu não deve ser nulo!")
-    private Integer[] codigoAutorizacao;
+    private String codigoAutorizacao;
 
     @NotNull(message = "Status não deve ser nulo!")
     private Status status;
