@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class FormaPagamentoCreateDTO {
-    private int tipo;
+    private Tipo tipo;
 
     @Nullable
     private int parcelas;

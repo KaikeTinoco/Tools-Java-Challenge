@@ -17,7 +17,6 @@ import org.hibernate.validator.constraints.LuhnCheck;
 public class Transacao {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @NotNull(message = "id não deve ser negativo!")
     private Long id;
 
     @LuhnCheck
@@ -26,12 +25,18 @@ public class Transacao {
     private String cartao;
 
     @NotNull(message = "descricao não deve ser nulo!")
-    @NotBlank(message = "descricao não deve estar em branco!")
     @ManyToOne
     private Descricao descricao;
 
     @NotNull(message = "formaPagamento não deve ser nulo!")
     @ManyToOne
     private FormaPagamento formaPagamento;
+
+
+    public Transacao(String cartao, Descricao descricao, FormaPagamento formaPagamento) {
+        this.cartao = cartao;
+        this.descricao = descricao;
+        this.formaPagamento = formaPagamento;
+    }
 }
 

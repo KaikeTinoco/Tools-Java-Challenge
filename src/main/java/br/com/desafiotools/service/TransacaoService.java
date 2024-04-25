@@ -5,6 +5,7 @@ import br.com.desafiotools.model.Descricao;
 import br.com.desafiotools.model.FormaPagamento;
 import br.com.desafiotools.model.Transacao;
 import br.com.desafiotools.model.enums.Status;
+import br.com.desafiotools.model.enums.Tipo;
 import br.com.desafiotools.repositories.DescricaoRepository;
 import br.com.desafiotools.repositories.FormaPagamentoRepository;
 import br.com.desafiotools.repositories.TransacaoRepository;
@@ -14,7 +15,6 @@ import kong.unirest.JsonNode;
 import kong.unirest.JsonResponse;
 import kong.unirest.Unirest;
 import lombok.AllArgsConstructor;
-import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -35,16 +35,14 @@ public class TransacaoService {
 
 
 
-    @SneakyThrows
-    public ResponseEntity<?> criarTransacao(String json) {
-        TransacaoCreateDTO dto = objectMapper.readValue(json, TransacaoCreateDTO.class);
+    public ResponseEntity<?> criarTransacao(TransacaoCreateDTO dto) {
         if(transacaoRepository.findByCartao(dto.getCartao()).isEmpty()){
-            Descricao descricao = descricaoMapper.toDescricao(dto.getDescricaoCreateDTO());
+            gerarNsuECodigoAutorizacao(dto);
+            Descricao descricao = gerarNsuECodigoAutorizacao(dto);
             descricaoRepository.save(descricao);
             FormaPagamento formaPagamento = formaPagamentoMapper.toFormaPagamento(dto.getFormaPagamentoCreateDTO());
             formaPagamentoRepository.save(formaPagamento);
-            Transacao novaTransacao = mapper.toTransacao(dto);
-            gerarNsuECodigoAutorizacao(novaTransacao);
+            Transacao novaTransacao = new Transacao(dto.getCartao(),descricao, formaPagamento);
             Descricao descricao1 = novaTransacao.getDescricao();
             descricao1.setStatus(Status.APROVADO);
             transacaoRepository.save(novaTransacao);
@@ -60,7 +58,7 @@ public class TransacaoService {
         return ResponseEntity.ok(transacaoRepository.findAll());
     }
 
-    private void gerarNsuECodigoAutorizacao(Transacao transacao){
+    private Descricao gerarNsuECodigoAutorizacao(TransacaoCreateDTO transacao){
         Random random = new Random();
         Integer[] nsu = new Integer[15];
         Integer[] codigoAutorizacao = new Integer[15];
@@ -68,11 +66,15 @@ public class TransacaoService {
             nsu[i] = random.nextInt(9);
             codigoAutorizacao[i] = random.nextInt(9);
         }
-        Descricao descricao = transacao.getDescricao();
-        descricao.setNsu(nsu);
+        Descricao descricao = descricaoMapper.toDescricao(transacao.getDescricaoCreateDTO());
         descricao.setCodigoAutorizacao(codigoAutorizacao);
-
+        descricao.setNsu(nsu);
+        descricao.setStatus(Status.APROVADO);
+        descricaoRepository.save(descricao);
+        return descricao;
     }
+
+
 
 
 }

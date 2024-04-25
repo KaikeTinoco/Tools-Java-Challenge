@@ -19,7 +19,7 @@ public class TransacaoController {
 
 
     @PostMapping(path = "/criar")
-    public ResponseEntity<?> criarTransacao(@RequestBody String transacao){
+    public ResponseEntity<?> criarTransacao(@RequestBody TransacaoCreateDTO transacao){
         return transacaoService.criarTransacao(transacao);
     }
 
