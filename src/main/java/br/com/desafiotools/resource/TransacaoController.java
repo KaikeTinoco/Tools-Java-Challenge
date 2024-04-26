@@ -17,7 +17,7 @@ public class TransacaoController {
 
     @PostMapping(path = "/criar")
     public ResponseEntity<?> criarTransacao(@RequestBody TransacaoCreateDTO transacao){
-        return transacaoService.criarTransacao(transacao);
+        return transacaoService.criarPagamento(transacao);
     }
 
     @GetMapping(path = "/busca")

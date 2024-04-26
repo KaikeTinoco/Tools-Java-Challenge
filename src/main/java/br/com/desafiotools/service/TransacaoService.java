@@ -4,37 +4,51 @@ import br.com.desafiotools.dto.DescricaoMapper;
 import br.com.desafiotools.dto.FormaPagamentoMapper;
 import br.com.desafiotools.dto.TransacaoCreateDTO;
 import br.com.desafiotools.dto.TransacaoMapper;
-import br.com.desafiotools.model.Descricao;
-import br.com.desafiotools.model.FormaPagamento;
-import br.com.desafiotools.model.Transacao;
+import br.com.desafiotools.model.*;
 import br.com.desafiotools.model.enums.Status;
-import br.com.desafiotools.repositories.DescricaoRepository;
-import br.com.desafiotools.repositories.FormaPagamentoRepository;
-import br.com.desafiotools.repositories.TransacaoRepository;
+import br.com.desafiotools.repositories.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 import java.util.Random;
 
-@AllArgsConstructor
+
 @Service
 public class TransacaoService {
-    @Autowired
-    private TransacaoRepository transacaoRepository;
-    private TransacaoMapper mapper;
+
+    private final TransacaoRepository transacaoRepository;
+    private  TransacaoMapper mapper;
     private DescricaoMapper descricaoMapper;
     private FormaPagamentoMapper formaPagamentoMapper;
-    private FormaPagamentoRepository formaPagamentoRepository;
-    private DescricaoRepository descricaoRepository;
+    private final FormaPagamentoRepository formaPagamentoRepository;
+    private final DescricaoRepository descricaoRepository;
+    private final PagamentoRepository pagamentoRepository;
+    private final EstornoRepository estornoRepository;
     private ObjectMapper objectMapper;
 
+    @Autowired
+    public TransacaoService(TransacaoRepository transacaoRepository,
+                            FormaPagamentoRepository formaPagamentoRepository,
+                            DescricaoRepository descricaoRepository,
+                            PagamentoRepository pagamentoRepository,
+                            EstornoRepository estornoRepository,
+                            TransacaoMapper mapper,
+                            DescricaoMapper descricaoMapper,
+                            FormaPagamentoMapper formaPagamentoMapper) {
+        this.transacaoRepository = transacaoRepository;
+        this.formaPagamentoRepository = formaPagamentoRepository;
+        this.descricaoRepository = descricaoRepository;
+        this.pagamentoRepository = pagamentoRepository;
+        this.estornoRepository = estornoRepository;
+        this.mapper = mapper;
+        this.descricaoMapper = descricaoMapper;
+        this.formaPagamentoMapper = formaPagamentoMapper;
+    }
 
 
-    public ResponseEntity<?> criarTransacao(TransacaoCreateDTO dto) {
+    public ResponseEntity<?> criarPagamento(TransacaoCreateDTO dto) {
         Transacao teste = mapper.toTransacao(dto);
         if(transacaoRepository.findByDescricaoDataHora(teste.getDescricao().getDataHora()).isEmpty()){
             gerarNsuECodigoAutorizacao(dto);
@@ -44,10 +58,20 @@ public class TransacaoService {
             formaPagamentoRepository.save(formaPagamento);
             Transacao novaTransacao = new Transacao(dto.getCartao(),descricao, formaPagamento);
             transacaoRepository.save(novaTransacao);
-            return ResponseEntity.status(201).body("");
+            if (novaTransacao.getDescricao().getStatus() == Status.APROVADO){
+                Pagamento pagamento = new Pagamento(novaTransacao);
+                pagamentoRepository.save(pagamento);
+                return ResponseEntity.status(201).body(pagamento);
+            } else {
+                Estorno estorno = new Estorno(novaTransacao);
+                estornoRepository.save(estorno);
+                return ResponseEntity.status(201).body(estorno);
+            }
         } else {
             return ResponseEntity.badRequest().
                     body("Por favor, verifique se os dados foram corretamente informados");
+
+
         }
     }
 
@@ -90,8 +114,5 @@ public class TransacaoService {
             descricao.setStatus(Status.RECUSADO);
         }
     }
-
-
-
 
 }
