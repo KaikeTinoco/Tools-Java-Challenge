@@ -1,17 +1,17 @@
 package br.com.desafiotools.service;
 
-import br.com.desafiotools.dto.DescricaoMapper;
-import br.com.desafiotools.dto.FormaPagamentoMapper;
-import br.com.desafiotools.dto.TransacaoCreateDTO;
-import br.com.desafiotools.dto.TransacaoMapper;
+import br.com.desafiotools.dto.*;
 import br.com.desafiotools.model.*;
 import br.com.desafiotools.model.enums.Status;
+import br.com.desafiotools.model.enums.Tipo;
 import br.com.desafiotools.repositories.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 import java.util.Random;
 
 
@@ -48,36 +48,32 @@ public class TransacaoService {
     }
 
 
-    public ResponseEntity<?> criarPagamento(TransacaoCreateDTO dto) {
+    public Transacao criarPagamento(TransacaoCreateDTO dto) {
         Transacao teste = mapper.toTransacao(dto);
         if(transacaoRepository.findByDescricaoDataHora(teste.getDescricao().getDataHora()).isEmpty()){
             gerarNsuECodigoAutorizacao(dto);
             Descricao descricao = gerarNsuECodigoAutorizacao(dto);
             descricaoRepository.save(descricao);
-            FormaPagamento formaPagamento = formaPagamentoMapper.toFormaPagamento(dto.getFormaPagamentoCreateDTO());
-            formaPagamentoRepository.save(formaPagamento);
+            FormaPagamento formaPagamento = validarFormaPagamento(dto);
             Transacao novaTransacao = new Transacao(dto.getCartao(),descricao, formaPagamento);
             transacaoRepository.save(novaTransacao);
             if (novaTransacao.getDescricao().getStatus() == Status.APROVADO){
                 Pagamento pagamento = new Pagamento(novaTransacao);
                 pagamentoRepository.save(pagamento);
-                return ResponseEntity.status(201).body(pagamento);
+                return novaTransacao;
             } else {
                 Estorno estorno = new Estorno(novaTransacao);
                 estornoRepository.save(estorno);
-                return ResponseEntity.status(201).body(estorno);
+                return novaTransacao;
             }
         } else {
-            return ResponseEntity.badRequest().
-                    body("Por favor, verifique se os dados foram corretamente informados");
-
-
+            throw new IllegalStateException("já existe uma transação com esses dados!");
         }
     }
 
 
-    public ResponseEntity<?> buscarTransacao() {
-        return ResponseEntity.ok(transacaoRepository.findAll());
+    public List<Transacao> buscarTransacao() {
+        return transacaoRepository.findAll();
     }
 
     private Descricao gerarNsuECodigoAutorizacao(TransacaoCreateDTO transacao){
@@ -88,6 +84,10 @@ public class TransacaoService {
             nsu += random.nextInt(9);
             codigoAutorizacao += random.nextInt(9);
         }
+        return getDescricao(transacao, codigoAutorizacao, nsu);
+    }
+
+    private Descricao getDescricao(TransacaoCreateDTO transacao, String codigoAutorizacao, String nsu) {
         Descricao descricao = descricaoMapper.toDescricao(transacao.getDescricaoCreateDTO());
         descricao.setCodigoAutorizacao(codigoAutorizacao);
         descricao.setNsu(nsu);
@@ -97,10 +97,10 @@ public class TransacaoService {
     }
 
 
-    public ResponseEntity<?> buscarTransacaoPorId(Long id) {
+    public Transacao buscarTransacaoPorId(Long id) {
         Transacao transacao = transacaoRepository.findById(id)
                 .orElseThrow(() -> new IllegalStateException("por favor informe um id valido"));
-        return ResponseEntity.ok(transacao);
+        return transacao;
     }
 
 
@@ -112,6 +112,17 @@ public class TransacaoService {
             descricao.setStatus(Status.APROVADO);
         } else {
             descricao.setStatus(Status.RECUSADO);
+        }
+    }
+
+    private FormaPagamento validarFormaPagamento(TransacaoCreateDTO dto){
+        Tipo tipo = dto.getFormaPagamentoCreateDTO().getTipo();
+        if(tipo == Tipo.AVISTA && dto.getFormaPagamentoCreateDTO().getParcelas() > 1){
+            throw new IllegalStateException("O número de parcelas não pode ser maior que um para pagamentos avista!");
+        } else {
+            FormaPagamento formaPagamento = formaPagamentoMapper.toFormaPagamento(dto.getFormaPagamentoCreateDTO());
+            formaPagamentoRepository.save(formaPagamento);
+            return formaPagamento;
         }
     }
 

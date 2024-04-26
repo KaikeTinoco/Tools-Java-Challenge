@@ -18,6 +18,8 @@ import java.util.stream.Collectors;
 public class TransacaoMapper {
     @Autowired
     private ModelMapper mapper;
+    private DescricaoMapper descricaoMapper;
+    private FormaPagamentoMapper formaPagamentoMapper;
 
     public Transacao toTransacao(TransacaoCreateDTO transacaoCreateDTO){
         Transacao novaTransacao = mapper.map(transacaoCreateDTO, Transacao.class);
@@ -26,6 +28,8 @@ public class TransacaoMapper {
 
     public TransacaoResponseDTO toDto(Transacao transacao){
         TransacaoResponseDTO dto = mapper.map(transacao, TransacaoResponseDTO.class);
+        dto.setDescricaoResponseDTO(descricaoMapper.toDescricaoResponseDTO(transacao.getDescricao()));
+        dto.setFormaPagamentoResponseDTO(formaPagamentoMapper.toDto(transacao.getFormaPagamento()));
         return dto;
     }
 
