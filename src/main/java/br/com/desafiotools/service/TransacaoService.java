@@ -1,6 +1,8 @@
 package br.com.desafiotools.service;
 
 import br.com.desafiotools.dto.*;
+import br.com.desafiotools.exceptions.BadRequestExcpetion;
+import br.com.desafiotools.exceptions.NotFoundExcption;
 import br.com.desafiotools.model.*;
 import br.com.desafiotools.model.enums.Status;
 import br.com.desafiotools.model.enums.Tipo;
@@ -12,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 
@@ -59,21 +62,33 @@ public class TransacaoService {
             transacaoRepository.save(novaTransacao);
             if (novaTransacao.getDescricao().getStatus() == Status.APROVADO){
                 Pagamento pagamento = new Pagamento(novaTransacao);
-                pagamentoRepository.save(pagamento);
+                try {
+                    pagamentoRepository.save(pagamento);
+                } catch (BadRequestExcpetion e){
+                    throw new BadRequestExcpetion("Erro ao tentar salvar o pagamento, por favor contate o suporte");
+                }
                 return novaTransacao;
             } else {
                 Estorno estorno = new Estorno(novaTransacao);
-                estornoRepository.save(estorno);
+                try {
+                    estornoRepository.save(estorno);
+                } catch (BadRequestExcpetion e){
+                    throw new BadRequestExcpetion("Erro ao tentar salvar o pagamento, por favor contate o suporte");
+                }
                 return novaTransacao;
             }
         } else {
-            throw new IllegalStateException("já existe uma transação com esses dados!");
+            throw new BadRequestExcpetion("já existe uma transação com esses dados!");
         }
     }
 
 
     public List<Transacao> buscarTransacao() {
-        return transacaoRepository.findAll();
+        try{
+            return transacaoRepository.findAll();
+        }catch (BadRequestExcpetion e){
+            throw new BadRequestExcpetion("Erro ao buscar as transações, por favor contate o suporte");
+        }
     }
 
     private Descricao gerarNsuECodigoAutorizacao(TransacaoCreateDTO transacao){
@@ -88,19 +103,24 @@ public class TransacaoService {
     }
 
     private Descricao getDescricao(TransacaoCreateDTO transacao, String codigoAutorizacao, String nsu) {
-        Descricao descricao = descricaoMapper.toDescricao(transacao.getDescricaoCreateDTO());
-        descricao.setCodigoAutorizacao(codigoAutorizacao);
-        descricao.setNsu(nsu);
-        decidirStatus(descricao);
-        descricaoRepository.save(descricao);
-        return descricao;
+        try{
+            Descricao descricao = descricaoMapper.toDescricao(transacao.getDescricaoCreateDTO());
+            descricao.setCodigoAutorizacao(codigoAutorizacao);
+            descricao.setNsu(nsu);
+            decidirStatus(descricao);
+            descricaoRepository.save(descricao);
+            return descricao;
+        } catch (BadRequestExcpetion e){
+            throw new BadRequestExcpetion("Erro durante a persistência da Descrição, contate o suporte");
+        }
+
     }
 
 
     public Transacao buscarTransacaoPorId(Long id) {
-        Transacao transacao = transacaoRepository.findById(id)
-                .orElseThrow(() -> new IllegalStateException("por favor informe um id valido"));
-        return transacao;
+        return Optional.of(transacaoRepository.findById(id))
+                .orElseThrow(() -> new NotFoundExcption("não foi encontrado nenhuma transação de id " + id ))
+                .get();
     }
 
 
@@ -118,11 +138,15 @@ public class TransacaoService {
     private FormaPagamento validarFormaPagamento(TransacaoCreateDTO dto){
         Tipo tipo = dto.getFormaPagamentoCreateDTO().getTipo();
         if(tipo == Tipo.AVISTA && dto.getFormaPagamentoCreateDTO().getParcelas() > 1){
-            throw new IllegalStateException("O número de parcelas não pode ser maior que um para pagamentos avista!");
+            throw new BadRequestExcpetion("O número de parcelas não pode ser maior que um para pagamentos avista!");
         } else {
-            FormaPagamento formaPagamento = formaPagamentoMapper.toFormaPagamento(dto.getFormaPagamentoCreateDTO());
-            formaPagamentoRepository.save(formaPagamento);
-            return formaPagamento;
+            try{
+                FormaPagamento formaPagamento = formaPagamentoMapper.toFormaPagamento(dto.getFormaPagamentoCreateDTO());
+                formaPagamentoRepository.save(formaPagamento);
+                return formaPagamento;
+            } catch (BadRequestExcpetion e){
+                throw new BadRequestExcpetion("Erro ao salvar a forma de pagamento, por favor contate o suporte");
+            }
         }
     }
 

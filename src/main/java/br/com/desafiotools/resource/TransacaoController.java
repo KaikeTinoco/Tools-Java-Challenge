@@ -5,9 +5,12 @@ import br.com.desafiotools.dto.TransacaoResponseDTO;
 import br.com.desafiotools.model.Pagamento;
 import br.com.desafiotools.model.Transacao;
 import br.com.desafiotools.service.TransacaoService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,7 +24,7 @@ public class TransacaoController {
 
 
     @PostMapping(path = "/criar")
-    public ResponseEntity<Transacao> criarTransacao(@RequestBody TransacaoCreateDTO transacao){
+    public ResponseEntity<Transacao> criarTransacao(@Valid @RequestBody TransacaoCreateDTO transacao){
         return ResponseEntity.ok(transacaoService.criarPagamento(transacao));
     }
 
@@ -31,7 +34,7 @@ public class TransacaoController {
     }
 
     @GetMapping(path = "/buscaId/{id}")
-    public ResponseEntity<Transacao> buscarTransacaoPorId(@PathVariable Long id){
+    public ResponseEntity<Transacao> buscarTransacaoPorId(@Valid @PathVariable Long id){
         return ResponseEntity.ok(transacaoService.buscarTransacaoPorId(id));
     }
 }
